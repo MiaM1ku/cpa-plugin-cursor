@@ -39,9 +39,9 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Package standalone installer
-        run: ./packaging/build-release.sh "${{ steps.version.outputs.version }}"
+        run: sh packaging/build-release.sh "${{ steps.version.outputs.version }}"
       - name: Package plugin store asset
-        run: ./packaging/build-store-release.sh "${{ steps.version.outputs.version }}"
+        run: sh packaging/build-store-release.sh "${{ steps.version.outputs.version }}"
       - uses: actions/upload-artifact@v4
         with:
           name: cursor-${{ steps.version.outputs.version }}-linux-amd64
