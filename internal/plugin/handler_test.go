@@ -31,7 +31,7 @@ func Test_Handler_Register_declares_cursor_auth_models_and_executor(t *testing.T
 	require.Contains(t, string(response.Result), `"usage_plugin":false`)
 	require.Contains(t, string(response.Result), `"request_interceptor":true`)
 	require.Contains(t, string(response.Result), `"request_lifecycle_plugin":true`)
-	require.Contains(t, string(response.Result), `"Version":"0.1.0"`)
+	require.Contains(t, string(response.Result), `"Version":"0.1.1"`)
 	require.Contains(t, string(response.Result), `"GitHubRepository":"https://github.com/MiaM1ku/cpa-plugin-cursor"`)
 }
 
