@@ -46,6 +46,10 @@ Model IDs that still include an effort suffix are accepted and converted to the 
 
 ## Quota
 
+CPA Manager Plus 原配额页只认识 Codex / Claude / Antigravity / Kimi / xAI。插件会把 Codex 的 WHAM 用量接口翻译成 Cursor 官方百分比，并填成 Codex 的主窗口（5 小时，Cursor Models）和次窗口（每周，Other Models）。若管理端用 `api-call` 打 `https://chatgpt.com/backend-api/wham/usage`，就会按 Cursor dashboard 会话返回这份 JSON。
+
+插件同时注册 `quota.provider`，并在管理中心增加 **Cursor 额度** 模块（不伪装执行通道，聊天仍走 `cursor`）。
+
 Refresh Cursor accounts from CPA Manager Plus **Accounts / Quota**. The plugin HTTP passthrough sets:
 
 - `Cookie: WorkosCursorSessionToken=<account_id>::<access_token>`

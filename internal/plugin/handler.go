@@ -107,6 +107,14 @@ func (handler *Handler) dispatch(ctx context.Context, method string, request []b
 		return countTokens(request)
 	case "executor.http_request":
 		return handler.httpRequest(ctx, request)
+	case "quota.identifier":
+		return quotaIdentifier(), nil
+	case "quota.describe":
+		return quotaDescribe(), nil
+	case "quota.fetch":
+		return handler.fetchQuota(ctx, request)
+	case "quota.reset":
+		return quotaReset(), nil
 	default:
 		return nil, errors.New("unknown plugin method")
 	}
@@ -117,7 +125,7 @@ func registration() map[string]any {
 		"schema_version": 3,
 		"metadata": map[string]any{
 			"Name":             "cursor",
-			"Version":          "0.1.1",
+			"Version":          "0.1.2",
 			"Author":           "yobo",
 			"GitHubRepository": "https://github.com/MiaM1ku/cpa-plugin-cursor",
 			"Logo":             "",
@@ -130,6 +138,7 @@ func registration() map[string]any {
 			"request_interceptor":      true,
 			"request_lifecycle_plugin": true,
 			"usage_plugin":             false,
+			"quota_provider":           true,
 			"executor":                 true,
 			"executor_model_scope":     "oauth",
 			"executor_input_formats":   []string{"chat-completions"},

@@ -47,7 +47,11 @@ func managementRegistration() managementRegistrationResponse {
 			{Method: http.MethodGet, Path: managementStatusPath},
 			{Method: http.MethodPut, Path: managementDisabledPath},
 		},
-		Resources: []managementResource{},
+		Resources: []managementResource{{
+			Path:        "/quota",
+			Menu:        "Cursor 额度",
+			Description: "Cursor dashboard usage as Codex-style quota windows / 将 Cursor 官方用量以 Codex 主窗口/次窗口形式展示。",
+		}},
 	}
 }
 
@@ -58,7 +62,7 @@ func (handler *Handler) handleManagement(ctx context.Context, raw []byte) (any, 
 	}
 	path := strings.TrimSpace(request.Path)
 	switch {
-	case strings.Contains(path, "/v0/resource/plugins/") && strings.HasSuffix(path, "/status"):
+	case strings.Contains(path, "/v0/resource/plugins/") && (strings.HasSuffix(path, "/status") || strings.HasSuffix(path, "/quota")):
 		return managementPageResponse(), nil
 	case strings.HasSuffix(path, "/status") && strings.EqualFold(request.Method, http.MethodGet):
 		return handler.managementStatus(ctx)

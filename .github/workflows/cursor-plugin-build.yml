@@ -33,7 +33,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          version="0.1.1"
+          version="0.1.2"
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             version="${GITHUB_REF_NAME#v}"
           fi

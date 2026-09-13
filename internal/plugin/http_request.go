@@ -41,6 +41,16 @@ func (handler *Handler) httpRequest(ctx context.Context, raw []byte) (any, error
 	if err != nil {
 		return nil, err
 	}
+	if cursorusage.IsCodexUsageURL(request.URL) {
+		return handler.codexUsageResponse(ctx, credentials)
+	}
+	if cursorusage.IsCodexResetCreditsURL(request.URL) {
+		return executorHTTPResponse{
+			StatusCode: http.StatusOK,
+			Headers:    http.Header{"Content-Type": []string{"application/json"}},
+			Body:       []byte(`{"available_count":0,"credits":[]}`),
+		}, nil
+	}
 	method := strings.ToUpper(strings.TrimSpace(request.Method))
 	if method == "" {
 		method = http.MethodGet
@@ -78,6 +88,25 @@ func (handler *Handler) httpRequest(ctx context.Context, raw []byte) (any, error
 		return nil, fmt.Errorf("Cursor HTTP response exceeds 2 MiB")
 	}
 	return executorHTTPResponse{StatusCode: response.StatusCode, Headers: response.Header.Clone(), Body: body}, nil
+}
+
+func (handler *Handler) codexUsageResponse(ctx context.Context, credentials cursorauth.Credentials) (any, error) {
+	if handler.usageAPI == nil {
+		return nil, fmt.Errorf("Cursor dashboard usage is unavailable")
+	}
+	snapshot, err := handler.usageAPI.Fetch(ctx, credentials.AccessToken, credentials.DashboardAccountID())
+	if err != nil {
+		return nil, err
+	}
+	payload, err := json.Marshal(cursorusage.CodexPayload(snapshot, credentials.DashboardAccountID(), credentials.Email, time.Now().UTC()))
+	if err != nil {
+		return nil, fmt.Errorf("encode Codex-shaped Cursor usage: %w", err)
+	}
+	return executorHTTPResponse{
+		StatusCode: http.StatusOK,
+		Headers:    http.Header{"Content-Type": []string{"application/json"}},
+		Body:       payload,
+	}, nil
 }
 
 func joinHTTPErrors(errs ...error) error {
