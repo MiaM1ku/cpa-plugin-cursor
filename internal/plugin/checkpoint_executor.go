@@ -28,6 +28,7 @@ func (handler *Handler) runCheckpointed(
 	if accountIdentity == "" {
 		accountIdentity = strings.TrimSpace(request.AuthID)
 	}
+	handler.bindWireModel(ctx, &chat, credentials.AccessToken)
 	session, hasSession := request.stableSessionIdentity()
 	if accountIdentity == "" || !hasSession {
 		input := fullReplayInput(chat, credentials.AccessToken)

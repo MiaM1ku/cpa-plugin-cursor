@@ -40,6 +40,8 @@ type ChatRequest struct {
 	Model       string
 	Effort      string
 	MaxMode     bool
+	Thinking    bool
+	Fast        bool
 	System      string
 	Prompt      string
 	Stream      bool
@@ -162,6 +164,7 @@ func ParseChatRequest(raw []byte) (ChatRequest, error) {
 	history = appendToolResultContinuation(history, transcript)
 	request := ChatRequest{
 		Model: selection.ID, Effort: selection.Effort, MaxMode: selection.MaxMode,
+		Thinking: selection.Thinking, Fast: selection.Fast,
 		System: strings.Join(system, "\n\n"), Prompt: strings.Join(history, "\n"), Stream: wire.Stream,
 		Tools: tools, Images: images, Attachments: attachments, Transcript: transcript,
 	}

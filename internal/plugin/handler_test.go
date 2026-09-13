@@ -32,7 +32,7 @@ func Test_Handler_Register_declares_cursor_auth_models_and_executor(t *testing.T
 	require.Contains(t, string(response.Result), `"quota_provider":true`)
 	require.Contains(t, string(response.Result), `"request_interceptor":true`)
 	require.Contains(t, string(response.Result), `"request_lifecycle_plugin":true`)
-	require.Contains(t, string(response.Result), `"Version":"0.1.4"`)
+	require.Contains(t, string(response.Result), `"Version":"0.1.5"`)
 	require.Contains(t, string(response.Result), `"GitHubRepository":"https://github.com/MiaM1ku/cpa-plugin-cursor"`)
 }
 
@@ -372,6 +372,32 @@ func Test_Handler_Execute_rejects_effort_suffix_when_base_model_is_disabled(t *t
 	require.NoError(t, json.Unmarshal(raw, &response))
 	require.False(t, response.OK)
 	require.Contains(t, response.Error.Message, "disabled")
+}
+
+func Test_Handler_Execute_rewrites_thinking_model_to_cursor_sibling(t *testing.T) {
+	client := &recordingCursorClient{
+		models: []string{"claude-fable-5-high", "claude-fable-5-thinking-xhigh", "claude-fable-5-thinking-high-fast"},
+		steps:  []cursorRunStep{successfulTextStep("ok", "conv", []byte("ckpt"))},
+	}
+	handler := NewHandler(Dependencies{Cursor: client})
+	credentials, err := cursorauth.MarshalCredentials(cursorauth.Credentials{
+		AccessToken: "access", RefreshToken: "refresh", Type: "cursor",
+	})
+	require.NoError(t, err)
+	request := executorRequest{
+		StorageJSON: credentials,
+		Payload:     []byte(`{"model":"cursor/claude-fable-5-thinking","reasoning_effort":"xhigh","messages":[{"role":"user","content":"hello"}]}`),
+	}
+	rawRequest, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	raw := handler.Call(context.Background(), "executor.execute", rawRequest)
+
+	var response envelope
+	require.NoError(t, json.Unmarshal(raw, &response))
+	require.True(t, response.OK)
+	require.Equal(t, "claude-fable-5-thinking-xhigh", client.Inputs()[0].Model)
+	require.Empty(t, client.Inputs()[0].Parameters)
 }
 
 type fakeCursorClient struct{}

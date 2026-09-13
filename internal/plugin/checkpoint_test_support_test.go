@@ -25,6 +25,7 @@ type recordingCursorClient struct {
 	mu     sync.Mutex
 	inputs []cursorapi.RunInput
 	steps  []cursorRunStep
+	models []string
 }
 
 func (client *recordingCursorClient) Run(
@@ -58,8 +59,11 @@ func (client *recordingCursorClient) Run(
 	return step.result, step.err
 }
 
-func (*recordingCursorClient) DiscoverModels(context.Context, string) ([]string, error) {
-	return []string{"auto"}, nil
+func (client *recordingCursorClient) DiscoverModels(context.Context, string) ([]string, error) {
+	if len(client.models) == 0 {
+		return []string{"auto"}, nil
+	}
+	return append([]string(nil), client.models...), nil
 }
 
 func (client *recordingCursorClient) Inputs() []cursorapi.RunInput {

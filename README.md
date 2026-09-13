@@ -3,7 +3,8 @@
 Native CLIProxyAPI plugin that uses an authorized Cursor account as an upstream.
 
 It exposes **base models only**. Reasoning level is passed with OpenAI `reasoning_effort` (`none` / `low` / `medium` / `high` / `xhigh`) instead of advertising every Cursor variant as a separate model.
-Max mode is `max_mode` or a `-max` / `-1m` model suffix, not a separate listed model.
+Thinking families are listed as `<base>-thinking`. The plugin sends Cursor sibling IDs (`<base>-thinking-<effort>` or `<base>-<effort>`) and ignores `-fast` variants.
+Max mode is `max_mode` or a `-1m` model suffix.
 
 Quota is shown on the plugin **Cursor 额度** page. CPA Manager Plus original quota cards still only know Codex / Claude / Antigravity / Kimi / xAI, so this plugin does **not** masquerade as Codex.
 
@@ -31,19 +32,20 @@ Restart CLIProxyAPI.
 ## Models
 
 - `cursor/auto` — Cursor Auto
-- `cursor/<base-id>` — one entry per Cursor model family (effort suffixes stripped)
+- `cursor/<base-id>` — non-thinking family
+- `cursor/<base-id>-thinking` — thinking family
 
 Send effort on the chat request:
 
 ```json
 {
-  "model": "cursor/claude-4.5-sonnet",
+  "model": "cursor/claude-fable-5-thinking",
   "reasoning_effort": "high",
   "messages": [{"role": "user", "content": "hello"}]
 }
 ```
 
-Model IDs that still include an effort suffix are accepted and converted to the base model plus `requested_model.parameters[{id:effort}]`.
+That request is sent to Cursor as `claude-fable-5-thinking-high`. A non-thinking request uses `claude-fable-5-high`. If `reasoning_effort` is omitted, the plugin defaults to `medium`.
 
 ## Quota
 

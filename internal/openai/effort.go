@@ -3,25 +3,35 @@ package openai
 import "strings"
 
 type ModelSelection struct {
-	ID      string
-	Effort  string
-	MaxMode bool
+	ID       string
+	Effort   string
+	MaxMode  bool
+	Thinking bool
+	Fast     bool
 }
 
 var effortSuffixes = []string{
-	"thinking-xhigh", "thinking-high", "thinking-medium", "thinking-low",
-	"thinking", "xhigh", "extra-high", "high", "medium", "low", "minimal", "none", "fast",
+	"thinking-extra-high", "thinking-xhigh", "thinking-high", "thinking-medium",
+	"thinking-low", "thinking-minimal", "thinking-none", "thinking-max", "thinking",
+	"nothinking", "extra-high", "xhigh", "high", "medium", "low", "minimal", "none", "max",
 }
-
-var maxModeSuffixes = []string{"1m", "max"}
 
 func ResolveModel(model, effort string, maxMode bool) ModelSelection {
 	id := strings.TrimPrefix(strings.TrimSpace(model), "cursor/")
 	id = strings.TrimSpace(id)
 	explicit := normalizeEffort(effort)
 	suffixEffort := ""
+	thinking := false
+	thinkingSet := false
+	fast := false
 	for {
-		next, strippedMax := stripMaxModeSuffix(id)
+		next, strippedFast := stripTaggedSuffix(id, "fast")
+		if strippedFast {
+			id = next
+			fast = true
+			continue
+		}
+		next, strippedMax := stripTaggedSuffix(id, "1m")
 		if strippedMax {
 			id = next
 			maxMode = true
@@ -30,6 +40,14 @@ func ResolveModel(model, effort string, maxMode bool) ModelSelection {
 		next, suffix, strippedEffort := stripEffortSuffix(id)
 		if strippedEffort {
 			id = next
+			if suffix == "thinking" || strings.HasPrefix(suffix, "thinking-") {
+				thinking = true
+				thinkingSet = true
+			}
+			if suffix == "nothinking" {
+				thinking = false
+				thinkingSet = true
+			}
 			if suffixEffort == "" {
 				suffixEffort = effortFromSuffix(suffix)
 			}
@@ -44,23 +62,20 @@ func ResolveModel(model, effort string, maxMode bool) ModelSelection {
 	if resolved == "" {
 		resolved = suffixEffort
 	}
-	return ModelSelection{ID: id, Effort: resolved, MaxMode: maxMode}
+	return ModelSelection{ID: id, Effort: resolved, MaxMode: maxMode, Thinking: thinking && thinkingSet, Fast: fast}
 }
 
 func CollapseModelID(model string) string {
 	return ResolveModel(model, "", false).ID
 }
 
-func stripMaxModeSuffix(id string) (string, bool) {
+func stripTaggedSuffix(id, suffix string) (string, bool) {
 	lower := strings.ToLower(id)
-	for _, suffix := range maxModeSuffixes {
-		trimmed, found := strings.CutSuffix(lower, "-"+suffix)
-		if !found || trimmed == "" {
-			continue
-		}
-		return id[:len(trimmed)], true
+	trimmed, found := strings.CutSuffix(lower, "-"+suffix)
+	if !found || trimmed == "" {
+		return id, false
 	}
-	return id, false
+	return id[:len(trimmed)], true
 }
 
 func stripEffortSuffix(id string) (string, string, bool) {
@@ -79,7 +94,7 @@ func stripEffortSuffix(id string) (string, string, bool) {
 
 func effortFromSuffix(suffix string) string {
 	switch suffix {
-	case "thinking-xhigh", "xhigh", "extra-high":
+	case "thinking-xhigh", "thinking-extra-high", "xhigh", "extra-high":
 		return "xhigh"
 	case "thinking-high", "high":
 		return "high"
@@ -87,10 +102,12 @@ func effortFromSuffix(suffix string) string {
 		return "medium"
 	case "thinking-low", "low":
 		return "low"
-	case "thinking":
-		return "high"
-	case "minimal", "none":
-		return suffix
+	case "thinking-max", "max":
+		return "max"
+	case "thinking-minimal", "minimal":
+		return "minimal"
+	case "thinking-none", "none":
+		return "none"
 	default:
 		return ""
 	}
@@ -98,9 +115,9 @@ func effortFromSuffix(suffix string) string {
 
 func normalizeEffort(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "none", "minimal", "low", "medium", "high", "xhigh":
+	case "none", "minimal", "low", "medium", "high", "xhigh", "max":
 		return strings.ToLower(strings.TrimSpace(value))
-	case "extra-high", "extra_high", "max":
+	case "extra-high", "extra_high":
 		return "xhigh"
 	case "x-high", "x_high":
 		return "xhigh"
@@ -119,9 +136,5 @@ func firstNonEmpty(values ...string) string {
 }
 
 func EffortParameters(effort string) []struct{ ID, Value string } {
-	effort = normalizeEffort(effort)
-	if effort == "" {
-		return nil
-	}
-	return []struct{ ID, Value string }{{ID: "effort", Value: effort}}
+	return nil
 }

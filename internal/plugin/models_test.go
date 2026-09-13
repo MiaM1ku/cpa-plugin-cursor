@@ -56,7 +56,7 @@ func Test_collapseModels_keeps_one_id_per_family(t *testing.T) {
 		"gpt-5.4-high",
 		"auto",
 	})
-	require.Equal(t, []string{"auto", "claude-4.5-sonnet", "gpt-5.4"}, collapsed)
+	require.Equal(t, []string{"auto", "claude-4.5-sonnet-thinking", "claude-4.5-sonnet", "gpt-5.4"}, collapsed)
 }
 
 func Test_collapseModels_collapses_fable_thinking_effort_suffixes(t *testing.T) {
@@ -66,7 +66,7 @@ func Test_collapseModels_collapses_fable_thinking_effort_suffixes(t *testing.T) 
 		"claude-fable-5",
 		"claude-fable-5-thinking",
 	})
-	require.Equal(t, []string{"auto", "claude-fable-5"}, collapsed)
+	require.Equal(t, []string{"auto", "claude-fable-5-thinking", "claude-fable-5"}, collapsed)
 }
 
 func Test_collapseModels_collapses_max_mode_and_effort_variants(t *testing.T) {
@@ -77,7 +77,16 @@ func Test_collapseModels_collapses_max_mode_and_effort_variants(t *testing.T) {
 		"claude-fable-5-max",
 		"claude-fable-5-thinking-max",
 	})
-	require.Equal(t, []string{"auto", "claude-fable-5"}, collapsed)
+	require.Equal(t, []string{"auto", "claude-fable-5-thinking", "claude-fable-5"}, collapsed)
+}
+
+func Test_collapseModels_skips_fast_variants(t *testing.T) {
+	collapsed := collapseModels([]string{
+		"gpt-5.2-high-fast",
+		"gpt-5.2-medium-fast",
+		"gpt-5.2-high",
+	})
+	require.Equal(t, []string{"auto", "gpt-5.2"}, collapsed)
 }
 
 func Test_filterDisabledModels_matches_collapsed_effort_ids(t *testing.T) {

@@ -209,11 +209,12 @@ func (handler *Handler) cursorAccountStatusWithCredential(ctx context.Context, f
 	disabled := normalizedModelSet(credential.DisabledModels)
 	items := make([]cursorModelStatus, 0, len(models))
 	for _, model := range models {
-		id := normalizeModelID(model)
-		if id == "" {
+		id := strings.TrimSpace(model)
+		family := normalizeModelID(id)
+		if id == "" || family == "" {
 			continue
 		}
-		_, blocked := disabled[id]
+		_, blocked := disabled[family]
 		items = append(items, cursorModelStatus{ID: id, Disabled: blocked})
 	}
 	metricKey := cursorMetricKey(file)

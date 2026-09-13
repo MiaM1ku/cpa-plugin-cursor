@@ -217,9 +217,18 @@ func countTokens(raw []byte) (any, error) {
 	return executorResponse{Payload: encoded, Headers: http.Header{"content-type": []string{"application/json"}}}, nil
 }
 
-func effortParameters(chat openai.ChatRequest) []cursorproto.ModelParameter {
-	if chat.Effort == "" {
-		return nil
+func effortParameters(_ openai.ChatRequest) []cursorproto.ModelParameter {
+	return nil
+}
+
+func (handler *Handler) bindWireModel(ctx context.Context, chat *openai.ChatRequest, accessToken string) {
+	var catalog []string
+	if handler != nil && handler.cursor != nil {
+		if models, err := handler.cursor.DiscoverModels(ctx, accessToken); err == nil {
+			catalog = models
+		}
 	}
-	return []cursorproto.ModelParameter{{ID: "effort", Value: chat.Effort}}
+	chat.Model = openai.ResolveWireID(openai.ModelSelection{
+		ID: chat.Model, Effort: chat.Effort, MaxMode: chat.MaxMode, Thinking: chat.Thinking,
+	}, catalog)
 }

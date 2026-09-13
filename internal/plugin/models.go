@@ -39,33 +39,51 @@ func filterDisabledModels(models, disabled []string) []string {
 	for _, id := range models {
 		normalized := normalizeModelID(id)
 		if _, found := blocked[normalized]; !found && normalized != "" {
-			filtered = append(filtered, normalized)
+			filtered = append(filtered, id)
 		}
 	}
 	return filtered
 }
 
 func collapseModels(ids []string) []string {
-	seen := make(map[string]struct{}, len(ids))
-	collapsed := make([]string, 0, len(ids))
-	for _, id := range ids {
-		base := openai.CollapseModelID(id)
-		if base == "" {
-			continue
-		}
-		if _, exists := seen[base]; exists {
-			continue
-		}
-		seen[base] = struct{}{}
-		collapsed = append(collapsed, base)
+	type family struct {
+		thinking   bool
+		nothinking bool
 	}
-	ordered := make([]string, 0, len(collapsed)+1)
-	ordered = append(ordered, "auto")
-	for _, id := range collapsed {
-		if id == "auto" {
+	families := make(map[string]*family, len(ids))
+	order := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if strings.HasSuffix(strings.ToLower(strings.TrimSpace(id)), "-fast") {
 			continue
 		}
-		ordered = append(ordered, id)
+		selection := openai.ResolveModel(id, "", false)
+		if selection.ID == "" {
+			continue
+		}
+		current := families[selection.ID]
+		if current == nil {
+			current = &family{}
+			families[selection.ID] = current
+			if selection.ID != "auto" {
+				order = append(order, selection.ID)
+			}
+		}
+		if selection.Thinking {
+			current.thinking = true
+		} else {
+			current.nothinking = true
+		}
+	}
+	ordered := make([]string, 0, len(order)+1)
+	ordered = append(ordered, "auto")
+	for _, familyID := range order {
+		current := families[familyID]
+		if current.thinking {
+			ordered = append(ordered, familyID+"-thinking")
+		}
+		if current.nothinking {
+			ordered = append(ordered, familyID)
+		}
 	}
 	return ordered
 }
