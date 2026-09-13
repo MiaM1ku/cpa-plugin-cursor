@@ -69,6 +69,17 @@ func Test_collapseModels_collapses_fable_thinking_effort_suffixes(t *testing.T) 
 	require.Equal(t, []string{"auto", "claude-fable-5"}, collapsed)
 }
 
+func Test_collapseModels_collapses_max_mode_and_effort_variants(t *testing.T) {
+	collapsed := collapseModels([]string{
+		"claude-fable-5",
+		"claude-fable-5-thinking",
+		"claude-fable-5-thinking-high",
+		"claude-fable-5-max",
+		"claude-fable-5-thinking-max",
+	})
+	require.Equal(t, []string{"auto", "claude-fable-5"}, collapsed)
+}
+
 func Test_filterDisabledModels_matches_collapsed_effort_ids(t *testing.T) {
 	filtered := filterDisabledModels(
 		[]string{"auto", "claude-fable-5", "gpt-5"},

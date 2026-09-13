@@ -26,6 +26,21 @@ func Test_ResolveModel_collapses_effort_suffixes_and_prefers_explicit_effort(t *
 	selection = ResolveModel("claude-fable-5-thinking-xhigh", "medium", false)
 	require.Equal(t, "claude-fable-5", selection.ID)
 	require.Equal(t, "medium", selection.Effort)
+
+	selection = ResolveModel("claude-fable-5-max", "", false)
+	require.Equal(t, "claude-fable-5", selection.ID)
+	require.True(t, selection.MaxMode)
+	require.Empty(t, selection.Effort)
+
+	selection = ResolveModel("claude-fable-5-thinking-max", "", false)
+	require.Equal(t, "claude-fable-5", selection.ID)
+	require.Equal(t, "high", selection.Effort)
+	require.True(t, selection.MaxMode)
+
+	selection = ResolveModel("claude-fable-5-max-thinking-xhigh", "", false)
+	require.Equal(t, "claude-fable-5", selection.ID)
+	require.Equal(t, "xhigh", selection.Effort)
+	require.True(t, selection.MaxMode)
 }
 
 func Test_ParseChatRequest_reads_reasoning_effort(t *testing.T) {

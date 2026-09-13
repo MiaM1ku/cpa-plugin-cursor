@@ -13,24 +13,29 @@ var effortSuffixes = []string{
 	"thinking", "xhigh", "extra-high", "high", "medium", "low", "minimal", "none", "fast",
 }
 
+var maxModeSuffixes = []string{"1m", "max"}
+
 func ResolveModel(model, effort string, maxMode bool) ModelSelection {
 	id := strings.TrimPrefix(strings.TrimSpace(model), "cursor/")
 	id = strings.TrimSpace(id)
 	explicit := normalizeEffort(effort)
 	suffixEffort := ""
-	for _, suffix := range effortSuffixes {
-		trimmed, found := strings.CutSuffix(id, "-"+suffix)
-		if !found || trimmed == "" {
+	for {
+		next, strippedMax := stripMaxModeSuffix(id)
+		if strippedMax {
+			id = next
+			maxMode = true
 			continue
 		}
-		id = trimmed
-		suffixEffort = effortFromSuffix(suffix)
+		next, suffix, strippedEffort := stripEffortSuffix(id)
+		if strippedEffort {
+			id = next
+			if suffixEffort == "" {
+				suffixEffort = effortFromSuffix(suffix)
+			}
+			continue
+		}
 		break
-	}
-	if strings.HasSuffix(strings.ToLower(id), "-1m") {
-		id = strings.TrimSuffix(id, "-1m")
-		id = strings.TrimSuffix(id, "-1M")
-		maxMode = true
 	}
 	if id == "" {
 		id = "auto"
@@ -44,6 +49,32 @@ func ResolveModel(model, effort string, maxMode bool) ModelSelection {
 
 func CollapseModelID(model string) string {
 	return ResolveModel(model, "", false).ID
+}
+
+func stripMaxModeSuffix(id string) (string, bool) {
+	lower := strings.ToLower(id)
+	for _, suffix := range maxModeSuffixes {
+		trimmed, found := strings.CutSuffix(lower, "-"+suffix)
+		if !found || trimmed == "" {
+			continue
+		}
+		return id[:len(trimmed)], true
+	}
+	return id, false
+}
+
+func stripEffortSuffix(id string) (string, string, bool) {
+	for _, suffix := range effortSuffixes {
+		trimmed, found := strings.CutSuffix(id, "-"+suffix)
+		if found && trimmed != "" {
+			return trimmed, suffix, true
+		}
+		trimmed, found = strings.CutSuffix(strings.ToLower(id), "-"+suffix)
+		if found && trimmed != "" {
+			return id[:len(trimmed)], suffix, true
+		}
+	}
+	return id, "", false
 }
 
 func effortFromSuffix(suffix string) string {

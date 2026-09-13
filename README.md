@@ -3,6 +3,7 @@
 Native CLIProxyAPI plugin that uses an authorized Cursor account as an upstream.
 
 It exposes **base models only**. Reasoning level is passed with OpenAI `reasoning_effort` (`none` / `low` / `medium` / `high` / `xhigh`) instead of advertising every Cursor variant as a separate model.
+Max mode is `max_mode` or a `-max` / `-1m` model suffix, not a separate listed model.
 
 Quota is shown on the plugin **Cursor 额度** page. CPA Manager Plus original quota cards still only know Codex / Claude / Antigravity / Kimi / xAI, so this plugin does **not** masquerade as Codex.
 
