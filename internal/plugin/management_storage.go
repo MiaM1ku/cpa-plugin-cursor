@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"cursorplugin/internal/cursorauth"
+	"cursorplugin/internal/openai"
 )
 
 func (handler *Handler) cursorAuthFiles(ctx context.Context) ([]hostAuthFile, error) {
@@ -117,7 +118,11 @@ func normalizedModelSet(models []string) map[string]struct{} {
 }
 
 func normalizeModelID(model string) string {
-	return strings.TrimPrefix(strings.TrimSpace(model), "cursor/")
+	id := strings.TrimPrefix(strings.TrimSpace(model), "cursor/")
+	if id == "" {
+		return ""
+	}
+	return openai.CollapseModelID(id)
 }
 
 func managementJSON(status int, payload any) (managementResponse, error) {

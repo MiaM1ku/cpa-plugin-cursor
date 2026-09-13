@@ -50,7 +50,7 @@ func managementRegistration() managementRegistrationResponse {
 		Resources: []managementResource{{
 			Path:        "/quota",
 			Menu:        "Cursor 额度",
-			Description: "Cursor dashboard usage as Codex-style quota windows / 将 Cursor 官方用量以 Codex 主窗口/次窗口形式展示。",
+			Description: "Cursor dashboard usage for this plugin / 在插件页单独显示 Cursor 官方用量。",
 		}},
 	}
 }

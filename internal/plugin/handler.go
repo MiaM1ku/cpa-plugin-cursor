@@ -125,7 +125,7 @@ func registration() map[string]any {
 		"schema_version": 3,
 		"metadata": map[string]any{
 			"Name":             "cursor",
-			"Version":          "0.1.2",
+			"Version":          "0.1.3",
 			"Author":           "yobo",
 			"GitHubRepository": "https://github.com/MiaM1ku/cpa-plugin-cursor",
 			"Logo":             "",

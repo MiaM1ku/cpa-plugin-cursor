@@ -235,6 +235,7 @@
           savedSettingsMany: "设置已保存，当前禁用 {count} 个模型。",
           modelLegendOne: "OAuth 模型禁用（{count} 个可用模型）",
           modelLegendMany: "OAuth 模型禁用（{count} 个可用模型）",
+          modelHelp: "只列出基座模型。思考强度用请求里的 reasoning_effort（none / low / medium / high / xhigh）。",
           disableAll: "全部禁用",
           allModelsSelectedOne: "已选择全部 {count} 个模型，请保存更改后生效。",
           allModelsSelectedMany: "已选择全部 {count} 个模型，请保存更改后生效。",
@@ -316,6 +317,7 @@
           savedSettingsMany: "Settings saved. {count} models are disabled.",
           modelLegendOne: "OAuth models to disable ({count} available model)",
           modelLegendMany: "OAuth models to disable ({count} available models)",
+          modelHelp: "Base models only. Send thinking level with reasoning_effort (none / low / medium / high / xhigh).",
           disableAll: "Disable all",
           allModelsSelectedOne: "Selected all {count} model. Save changes to apply.",
           allModelsSelectedMany: "Selected all {count} models. Save changes to apply.",
@@ -663,7 +665,10 @@
         save.dataset.action = "save-settings";
         save.textContent = translate("saveSettings");
         actions.append(save, disableAll);
-        fieldset.append(legend, modelGrid);
+        const modelHelp = document.createElement("p");
+        modelHelp.className = "muted";
+        modelHelp.textContent = translate("modelHelp");
+        fieldset.append(legend, modelHelp, modelGrid);
         form.append(fieldset, accountNotice, actions);
         card.append(head, quotaSection, metrics, logicalHelp, hostMetrics, checkpointMetrics, form);
         return card;

@@ -32,7 +32,7 @@ func Test_Handler_Register_declares_cursor_auth_models_and_executor(t *testing.T
 	require.Contains(t, string(response.Result), `"quota_provider":true`)
 	require.Contains(t, string(response.Result), `"request_interceptor":true`)
 	require.Contains(t, string(response.Result), `"request_lifecycle_plugin":true`)
-	require.Contains(t, string(response.Result), `"Version":"0.1.2"`)
+	require.Contains(t, string(response.Result), `"Version":"0.1.3"`)
 	require.Contains(t, string(response.Result), `"GitHubRepository":"https://github.com/MiaM1ku/cpa-plugin-cursor"`)
 }
 
@@ -48,6 +48,19 @@ func Test_Handler_ManagementRegister_exposes_cursor_management_resource_and_auth
 	require.Contains(t, string(response.Result), `"Path":"/plugins/cursor/disabled-models"`)
 	require.Contains(t, string(response.Result), `"Path":"/quota"`)
 	require.Contains(t, string(response.Result), `"Menu":"Cursor 额度"`)
+	require.NotContains(t, string(response.Result), "Codex")
+}
+
+func Test_Handler_QuotaDescribe_supports_cursor_only(t *testing.T) {
+	handler := NewHandler(Dependencies{})
+
+	raw := handler.Call(context.Background(), "quota.describe", nil)
+
+	var response envelope
+	require.NoError(t, json.Unmarshal(raw, &response))
+	require.True(t, response.OK)
+	require.Contains(t, string(response.Result), `"supported_providers":["cursor"]`)
+	require.NotContains(t, string(response.Result), "codex")
 }
 
 func Test_Handler_RequestLifecycle_ignores_non_cursor_auth(t *testing.T) {
@@ -334,6 +347,30 @@ func Test_Handler_Execute_rejects_model_disabled_by_cursor_plugin(t *testing.T) 
 	require.NoError(t, json.Unmarshal(raw, &response))
 	require.False(t, response.OK)
 	require.Equal(t, 400, response.Error.HTTPStatus)
+	require.Contains(t, response.Error.Message, "disabled")
+}
+
+func Test_Handler_Execute_rejects_effort_suffix_when_base_model_is_disabled(t *testing.T) {
+	handler := NewHandler(Dependencies{Cursor: fakeCursorClient{}})
+	credentials, err := cursorauth.MarshalCredentials(cursorauth.Credentials{
+		AccessToken:    "access",
+		RefreshToken:   "refresh",
+		Type:           "cursor",
+		DisabledModels: []string{"claude-fable-5"},
+	})
+	require.NoError(t, err)
+	request := executorRequest{
+		StorageJSON: credentials,
+		Payload:     []byte(`{"model":"cursor/claude-fable-5-thinking-xhigh","messages":[{"role":"user","content":"hello"}]}`),
+	}
+	rawRequest, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	raw := handler.Call(context.Background(), "executor.execute", rawRequest)
+
+	var response envelope
+	require.NoError(t, json.Unmarshal(raw, &response))
+	require.False(t, response.OK)
 	require.Contains(t, response.Error.Message, "disabled")
 }
 

@@ -34,16 +34,10 @@ func filterDisabledModels(models, disabled []string) []string {
 	if len(disabled) == 0 {
 		return append([]string(nil), models...)
 	}
-	blocked := make(map[string]struct{}, len(disabled))
-	for _, id := range disabled {
-		normalized := strings.TrimPrefix(strings.TrimSpace(id), "cursor/")
-		if normalized != "" {
-			blocked[normalized] = struct{}{}
-		}
-	}
+	blocked := normalizedModelSet(disabled)
 	filtered := make([]string, 0, len(models))
 	for _, id := range models {
-		normalized := strings.TrimPrefix(strings.TrimSpace(id), "cursor/")
+		normalized := normalizeModelID(id)
 		if _, found := blocked[normalized]; !found && normalized != "" {
 			filtered = append(filtered, normalized)
 		}

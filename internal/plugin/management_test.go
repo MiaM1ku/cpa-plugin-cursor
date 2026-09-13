@@ -59,6 +59,34 @@ func Test_Handler_ManagementStatus_reports_models_disabled_rules_and_honest_quot
 	require.NotContains(t, string(response.Body), "secret-refresh")
 }
 
+func Test_Handler_ManagementStatus_collapses_effort_variants_to_base_ids(t *testing.T) {
+	credentials, err := cursorauth.MarshalCredentials(cursorauth.Credentials{
+		AccessToken:    "secret-access",
+		RefreshToken:   "secret-refresh",
+		Type:           "cursor",
+		DisabledModels: []string{"claude-fable-5-thinking-high"},
+	})
+	require.NoError(t, err)
+	handler := testHandler(Dependencies{
+		Cursor: fakeModelCursorClient{models: []string{
+			"claude-fable-5-thinking-high",
+			"claude-fable-5-thinking-xhigh",
+			"claude-fable-5",
+			"gpt-5",
+		}},
+		Host: &fakeHostCaller{credentialJSON: credentials},
+	})
+
+	response, err := handler.managementStatus(context.Background())
+
+	require.NoError(t, err)
+	require.Equal(t, 200, response.StatusCode)
+	require.Contains(t, string(response.Body), `"id":"claude-fable-5","disabled":true`)
+	require.Contains(t, string(response.Body), `"id":"gpt-5","disabled":false`)
+	require.NotContains(t, string(response.Body), "thinking-high")
+	require.NotContains(t, string(response.Body), "thinking-xhigh")
+}
+
 func Test_Handler_ManagementStatus_ignores_runtime_projection_of_physical_cursor_auth(t *testing.T) {
 	credentials, err := cursorauth.MarshalCredentials(cursorauth.Credentials{
 		AccessToken:  "secret-access",
@@ -247,6 +275,33 @@ func Test_Handler_UpdateDisabledModels_persists_rules_in_cursor_auth_without_los
 	require.Equal(t, "secret-refresh", saved.RefreshToken)
 	require.Equal(t, []string{"gpt-5"}, saved.DisabledModels)
 	require.Equal(t, "cursor-auth.json", host.savedName)
+}
+
+func Test_Handler_UpdateDisabledModels_stores_collapsed_base_ids(t *testing.T) {
+	credentials, err := cursorauth.MarshalCredentials(cursorauth.Credentials{
+		AccessToken:  "secret-access",
+		RefreshToken: "secret-refresh",
+		Type:         "cursor",
+	})
+	require.NoError(t, err)
+	host := &fakeHostCaller{credentialJSON: credentials}
+	handler := testHandler(Dependencies{
+		Cursor: fakeModelCursorClient{models: []string{
+			"claude-fable-5-thinking-high",
+			"claude-fable-5-thinking-xhigh",
+		}},
+		Host: host,
+	})
+	body := []byte(`{"auth_index":"cursor-auth","disabled_models":["claude-fable-5-thinking-xhigh"]}`)
+
+	response, err := handler.updateDisabledModels(context.Background(), body)
+
+	require.NoError(t, err)
+	require.Equal(t, 200, response.StatusCode)
+	var saved cursorauth.Credentials
+	require.NoError(t, json.Unmarshal(host.savedJSON, &saved))
+	require.Equal(t, []string{"claude-fable-5"}, saved.DisabledModels)
+	require.Contains(t, string(response.Body), `"disabled_models":["claude-fable-5"]`)
 }
 
 func Test_Handler_ManagementStatus_includes_plugin_local_estimated_usage(t *testing.T) {
@@ -543,6 +598,8 @@ func Test_Handler_ManagementResource_serves_bilingual_shell_without_exposing_aut
 	require.Contains(t, string(response.Body), `accountNotice.setAttribute("aria-live", "polite")`)
 	require.Contains(t, string(response.Body), `setAccountNoticeKey(noticeKey, { count: selected.length }, "success")`)
 	require.Contains(t, string(response.Body), `modelLegendMany: "OAuth models to disable ({count} available models)"`)
+	require.Contains(t, string(response.Body), `modelHelp: "只列出基座模型。思考强度用请求里的 reasoning_effort（none / low / medium / high / xhigh）。"`)
+	require.Contains(t, string(response.Body), `modelHelp: "Base models only. Send thinking level with reasoning_effort (none / low / medium / high / xhigh)."`)
 	require.Contains(t, string(response.Body), `<select id="language"`)
 	require.Contains(t, string(response.Body), `<option value="zh-CN">中文</option>`)
 	require.Contains(t, string(response.Body), `<option value="en">English</option>`)

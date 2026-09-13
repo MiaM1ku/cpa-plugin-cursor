@@ -4,7 +4,7 @@ Native CLIProxyAPI plugin that uses an authorized Cursor account as an upstream.
 
 It exposes **base models only**. Reasoning level is passed with OpenAI `reasoning_effort` (`none` / `low` / `medium` / `high` / `xhigh`) instead of advertising every Cursor variant as a separate model.
 
-Quota refresh uses the original CPA / CPA Manager Plus account quota path (`POST /v0/management/api-call`). The plugin injects the Cursor dashboard session cookie and `Origin: https://cursor.com` so `usage-summary`, `get-current-period-usage`, and `get-aggregated-usage-events` work. There is no separate plugin quota page.
+Quota is shown on the plugin **Cursor 额度** page. CPA Manager Plus original quota cards still only know Codex / Claude / Antigravity / Kimi / xAI, so this plugin does **not** masquerade as Codex.
 
 Token usage in OpenAI responses prefers Cursor `token_delta` events. The host records that payload once. This plugin does **not** enable `usage_plugin`, so CPA usage analytics is not double-counted. Checkpoint retries stay inside one executor call.
 
@@ -46,17 +46,16 @@ Model IDs that still include an effort suffix are accepted and converted to the 
 
 ## Quota
 
-CPA Manager Plus 原配额页只认识 Codex / Claude / Antigravity / Kimi / xAI。插件会把 Codex 的 WHAM 用量接口翻译成 Cursor 官方百分比，并填成 Codex 的主窗口（5 小时，Cursor Models）和次窗口（每周，Other Models）。若管理端用 `api-call` 打 `https://chatgpt.com/backend-api/wham/usage`，就会按 Cursor dashboard 会话返回这份 JSON。
+Open the plugin management resource **Cursor 额度**. It reads Cursor dashboard usage with the account session cookie:
 
-插件同时注册 `quota.provider`，并在管理中心增加 **Cursor 额度** 模块（不伪装执行通道，聊天仍走 `cursor`）。
-
-Refresh Cursor accounts from CPA Manager Plus **Accounts / Quota**. The plugin HTTP passthrough sets:
+- Cursor Models: `autoPercentUsed` plus aggregated spend
+- Other Models: `apiPercentUsed` plus guaranteed / used spend
 
 - `Cookie: WorkosCursorSessionToken=<account_id>::<access_token>`
 - `Origin: https://cursor.com`
 - `Referer: https://cursor.com/dashboard`
 
-Do not send a Bearer token to those dashboard URLs.
+`quota.provider` reports identifier `cursor` only. Chat still uses provider `cursor`. Do not send a Bearer token to dashboard URLs.
 
 ## License
 

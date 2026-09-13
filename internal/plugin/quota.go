@@ -24,7 +24,7 @@ func quotaIdentifier() map[string]string {
 
 func quotaDescribe() map[string]any {
 	return map[string]any{
-		"supported_providers": []string{"cursor", "codex"},
+		"supported_providers": []string{"cursor"},
 		"display_name":        "Cursor",
 		"supports_reset":      false,
 	}

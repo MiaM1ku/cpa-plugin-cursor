@@ -205,6 +205,7 @@ func (handler *Handler) cursorAccountStatusWithCredential(ctx context.Context, f
 	if err != nil {
 		return cursorAccountStatus{}, fmt.Errorf("discover Cursor models: %w", err)
 	}
+	models = collapseModels(models)
 	disabled := normalizedModelSet(credential.DisabledModels)
 	items := make([]cursorModelStatus, 0, len(models))
 	for _, model := range models {
@@ -283,7 +284,7 @@ func (handler *Handler) updateDisabledModels(ctx context.Context, body []byte) (
 	if err != nil {
 		return managementError(http.StatusBadGateway, "discover Cursor models: "+err.Error()), nil
 	}
-	known := normalizedModelSet(available)
+	known := normalizedModelSet(collapseModels(available))
 	disabled := sortedUniqueModels(update.DisabledModels)
 	for _, id := range disabled {
 		if _, ok := known[id]; !ok {

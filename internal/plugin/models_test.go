@@ -58,3 +58,21 @@ func Test_collapseModels_keeps_one_id_per_family(t *testing.T) {
 	})
 	require.Equal(t, []string{"auto", "claude-4.5-sonnet", "gpt-5.4"}, collapsed)
 }
+
+func Test_collapseModels_collapses_fable_thinking_effort_suffixes(t *testing.T) {
+	collapsed := collapseModels([]string{
+		"claude-fable-5-thinking-high",
+		"claude-fable-5-thinking-xhigh",
+		"claude-fable-5",
+		"claude-fable-5-thinking",
+	})
+	require.Equal(t, []string{"auto", "claude-fable-5"}, collapsed)
+}
+
+func Test_filterDisabledModels_matches_collapsed_effort_ids(t *testing.T) {
+	filtered := filterDisabledModels(
+		[]string{"auto", "claude-fable-5", "gpt-5"},
+		[]string{"claude-fable-5-thinking-high"},
+	)
+	require.Equal(t, []string{"auto", "gpt-5"}, filtered)
+}
