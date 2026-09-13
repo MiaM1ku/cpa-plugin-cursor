@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+*.swp
+*~
+*.so
+*.h
+/release/
+*.test
+*.out
+coverage.html
+coverage.out

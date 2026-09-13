@@ -1,0 +1,64 @@
+name: Cursor plugin build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  linux-amd64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Test
+        run: go test -count=1 ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build Linux amd64 plugin
+        env:
+          CGO_ENABLED: "1"
+          GOARCH: amd64
+          GOOS: linux
+        run: go build -trimpath -buildmode=c-shared -o cursor.so .
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          version="0.1.0"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Package standalone installer
+        run: ./packaging/build-release.sh "${{ steps.version.outputs.version }}"
+      - name: Package plugin store asset
+        run: ./packaging/build-store-release.sh "${{ steps.version.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cursor-${{ steps.version.outputs.version }}-linux-amd64
+          path: |
+            release/cursor-plugin-${{ steps.version.outputs.version }}-linux-amd64.tar.gz
+            release/cursor_${{ steps.version.outputs.version }}_linux_amd64.zip
+            release/checksums.txt
+          if-no-files-found: error
+      - name: Publish plugin store release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          "release/cursor_${{ steps.version.outputs.version }}_linux_amd64.zip"
+          "release/checksums.txt"
+          "release/cursor-plugin-${{ steps.version.outputs.version }}-linux-amd64.tar.gz"
+          --repo "$GITHUB_REPOSITORY"
+          --title "Cursor plugin $GITHUB_REF_NAME"
+          --notes-file "docs/releases/$GITHUB_REF_NAME.md"
